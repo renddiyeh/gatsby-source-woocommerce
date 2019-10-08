@@ -31,7 +31,7 @@ plugins:[
     options: {
 	   // Base URL of Wordpress site
       api: 'wordpress.domain',
-      // true if using https. false if nah.
+      // true if using https. otherwise false.
       https: false,
       api_keys: {
         consumer_key: <key>,
@@ -331,6 +331,7 @@ Some example queries for the fixed and fluid types are below.
 You can visit [gatsby-image](https://www.gatsbyjs.org/packages/gatsby-image/) for more information, and to learn about the different types of queries.
 
 ## Changelog
+- 0.7.0: Change to [new library to access the WooCommerce REST API](https://github.com/woocommerce/woocommerce-rest-api-js-lib), since [the old one is now obsolete](https://github.com/woocommerce/wc-api-node).
 - 0.6.2: [Fix race condition when adding sharp images to products](https://github.com/pasdo501/gatsby-source-woocommerce/commit/e37d841c54227a9011cfc2f9b7e971e78b86a257)
 - 0.6.1: Add Gatsby Image support (localFile field) to product variations images.
 - 0.6.0: Properly support product variations, accessible through the product_variations field on products.
