@@ -44,14 +44,27 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
   for await (let node of nodes) {
     if (node.__type === "wcProducts") {
       if (node.variations && node.variations.length) {
-        /* 100 should be enough variations for most cases, but if you need more, this is
-          the place to edit */
-        const result = await WooCommerce.getAsync(
-          `products/${node.wordpress_id}/variations?per_page=100`
-        )
-        const resultJson = result.toJSON()
-        node.product_variations =
-          resultJson.statusCode === 200 ? JSON.parse(resultJson.body) : []
+        let page = 1;
+        let pages;
+        node.product_variations = [];
+
+        do {
+          let args = { page, per_page: 100 };
+
+          const result = await WooCommerce.get(
+            `products/${node.wordpress_id}/variations`,
+            args
+          );
+
+          if (result.status !== 200) {
+            break;
+          }
+
+          node.product_variations = [...node.product_variations, ...result.data];
+          pages = parseInt(result.headers['x-wp-totalpages']);
+          page++;
+        } while (page <= pages);
+
       } else {
         node.product_variations = []
       }

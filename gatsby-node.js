@@ -37,19 +37,28 @@ exports.sourceNodes = async (
 
   // Fetch Node and turn our response to JSON
   const fetchNodes = async fieldName => {
-    const res = await WooCommerce.get(
-      fieldName,
-      per_page ? { per_page } : {}
-    );
-    
-    if (res.status !== 200) {
-      console.warn(`
-        \n========== WARNING FOR FIELD ${fieldName} ==========\n`)
-      console.warn(`The following error message was produced: ${res.body}`)
-      console.warn(`\n========== END WARNING ==========\n`)
-      return []
-    }
-    return res.data;
+    let data_ = [];
+    let page = 1;
+    let pages;
+
+    do {
+      let args = per_page ? { per_page, page } : { page }
+      const res = await WooCommerce.get(fieldName, args);
+
+      if (res.status !== 200) {
+        console.warn(`
+          \n========== WARNING FOR FIELD ${fieldName} ==========\n`)
+        console.warn(`The following error message was produced: ${res.data}`)
+        console.warn(`\n========== END WARNING ==========\n`)
+        return []
+      }
+
+      data_ = [...data_, ...res.data];
+      pages = parseInt(res.headers['x-wp-totalpages']);
+      page++
+    } while (page <= pages);
+
+    return data_;
   }
 
   // Loop over each field set in configOptions and process/create nodes
