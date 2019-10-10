@@ -1,20 +1,20 @@
-const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
 
 const processNode = (createContentDigest, node) => {
-  const { __type } = node
-  delete node.__type
+  const { __type } = node;
+  delete node.__type;
 
   if (__type === "wcProducts" && node.categories) {
-    node.categories.forEach(category => {
+    node.categories.forEach((category) => {
       // Add wordpress_id field when there is no
       // categories connection to keep the id access
       // consistent between just products & products with
       // categories
-      category.wordpress_id = category.id
-    })
+      category.wordpress_id = category.id;
+    });
   }
 
-  const nodeContent = JSON.stringify(node)
+  const nodeContent = JSON.stringify(node);
 
   const nodeData = Object.assign({}, node, {
     id: node.id,
@@ -25,10 +25,10 @@ const processNode = (createContentDigest, node) => {
       type: __type,
       contentDigest: createContentDigest(nodeContent),
     },
-  })
+  });
 
-  return nodeData
-}
+  return nodeData;
+};
 
 /**
  * Get product variations data for variable products and add to nodes.
@@ -40,7 +40,7 @@ const processNode = (createContentDigest, node) => {
  * @return {array} Processed nodes
  */
 const asyncGetProductVariations = async (nodes, WooCommerce) => {
-  const processedNodes = []
+  const processedNodes = [];
   for await (let node of nodes) {
     if (node.__type === "wcProducts") {
       if (node.variations && node.variations.length) {
@@ -50,32 +50,45 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
 
         do {
           let args = { page, per_page: 100 };
-
-          const result = await WooCommerce.get(
+          await WooCommerce.get(
             `products/${node.wordpress_id}/variations`,
             args
-          );
-
-          if (result.status !== 200) {
-            break;
-          }
-
-          node.product_variations = [...node.product_variations, ...result.data];
-          pages = parseInt(result.headers['x-wp-totalpages']);
-          page++;
+          )
+            .then((response) => {
+              if (response.status === 200) {
+                node.product_variations = [
+                  ...node.product_variations,
+                  ...response.data,
+                ];
+                pages = parseInt(response.headers["x-wp-totalpages"]);
+                page++;
+              } else {
+                console.warn(`
+                Warning: error while fetching variations for ${node.name}.
+                Error data: ${response.data}.
+              `);
+                pages = 0;
+              }
+            })
+            .catch((error) => {
+              console.warn(`
+              Warning: error while fetching variations for ${node.name}.
+              Error code: ${error.response.status}.
+            `);
+              pages = 0;
+            });
         } while (page <= pages);
-
       } else {
-        node.product_variations = []
+        node.product_variations = [];
       }
-      processedNodes.push(node)
+      processedNodes.push(node);
     } else {
-      processedNodes.push(node)
+      processedNodes.push(node);
     }
   }
 
-  return processedNodes
-}
+  return processedNodes;
+};
 
 /**
  * Create links between products and categories (bi-directional)
@@ -83,40 +96,40 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
  *
  * @return {array} Processed nodes
  */
-const mapProductsToCategories = nodes => {
+const mapProductsToCategories = (nodes) => {
   const categories = nodes.filter(
-    node => node.__type === "wcProductsCategories"
-  )
+    (node) => node.__type === "wcProductsCategories"
+  );
 
-  return nodes.map(node => {
+  return nodes.map((node) => {
     if (categories.length && node.__type === "wcProducts") {
       node.categories.forEach(({ id }) => {
-        const category = categories.find(c => id === c.wordpress_id)
+        const category = categories.find((c) => id === c.wordpress_id);
         if (category) {
           if (!node.categories___NODE) {
             // Initialise the connection array if necessary
-            node.categories___NODE = []
+            node.categories___NODE = [];
           }
           // Add the current category ID to the connection array
-          node.categories___NODE.push(category.id)
+          node.categories___NODE.push(category.id);
 
           if (!category.products___NODE) {
             // Initialise the product connection array if necessary
-            category.products___NODE = []
+            category.products___NODE = [];
           }
           // Add the current product's ID to the connection array
-          category.products___NODE.push(node.id)
+          category.products___NODE.push(node.id);
         }
-      })
+      });
       if (node.categories___NODE) {
         // Remove the old categories field if
         // nodes are now being referenced
-        delete node.categories
+        delete node.categories;
       }
     }
-    return node
-  })
-}
+    return node;
+  });
+};
 
 /**
  * Create links between products and tags (bi-directional)
@@ -125,39 +138,39 @@ const mapProductsToCategories = nodes => {
  *
  * @return {array} Processed nodes
  */
-const mapProductsToTags = nodes => {
-  const tags = nodes.filter(node => node.__type === "wcProductsTags")
+const mapProductsToTags = (nodes) => {
+  const tags = nodes.filter((node) => node.__type === "wcProductsTags");
 
-  return nodes.map(node => {
+  return nodes.map((node) => {
     if (tags.length && node.__type === "wcProducts") {
       node.tags.forEach(({ id }) => {
-        const tag = tags.find(t => id === t.wordpress_id)
+        const tag = tags.find((t) => id === t.wordpress_id);
         if (tag) {
           if (!node.tags___NODE) {
             // Initialise the connection array if necessary
-            node.tags___NODE = []
+            node.tags___NODE = [];
           }
           // Add the current tag ID to the connection array
-          node.tags___NODE.push(tag.id)
+          node.tags___NODE.push(tag.id);
 
           if (!tag.products___NODE) {
             // Initialise the connection array if necessary
-            tag.products___NODE = []
+            tag.products___NODE = [];
           }
 
           //Add the current product's ID to the connection array
-          tag.products___NODE.push(node.id)
+          tag.products___NODE.push(node.id);
         }
-      })
+      });
       if (node.tags___NODE) {
         // Remove the old tags field if
         // nodes are now being referenced
-        delete node.tags
+        delete node.tags;
       }
     }
-    return node
-  })
-}
+    return node;
+  });
+};
 
 /**
  * Map nodes of related products to products
@@ -166,28 +179,28 @@ const mapProductsToTags = nodes => {
  *
  * @return {array} Processed nodes
  */
-const mapRelatedProducts = nodes => {
-  const products = nodes.filter(node => node.__type === "wcProducts")
+const mapRelatedProducts = (nodes) => {
+  const products = nodes.filter((node) => node.__type === "wcProducts");
 
-  return nodes.map(node => {
+  return nodes.map((node) => {
     if (node.__type === "wcProducts") {
       const related_products = node.related_ids
-        ? node.related_ids.map(id => {
+        ? node.related_ids.map((id) => {
             const product = products.find(
-              product => product.wordpress_id === id
-            )
-            return product ? product.id : null
+              (product) => product.wordpress_id === id
+            );
+            return product ? product.id : null;
           })
-        : null
+        : null;
       if (related_products) {
-        node.related_products___NODE = related_products
+        node.related_products___NODE = related_products;
       } else {
-        node.related_products = []
+        node.related_products = [];
       }
     }
-    return node
-  })
-}
+    return node;
+  });
+};
 
 /**
  * Map nodes of each product in a grouped product to the parent product.
@@ -196,28 +209,28 @@ const mapRelatedProducts = nodes => {
  *
  * @return {array} Processed nodes
  */
-const mapGroupedProducts = nodes => {
-  const products = nodes.filter(node => node.__type === "wcProducts")
+const mapGroupedProducts = (nodes) => {
+  const products = nodes.filter((node) => node.__type === "wcProducts");
 
-  return nodes.map(node => {
+  return nodes.map((node) => {
     if (node.__type === "wcProducts") {
       const grouped_products = node.grouped_products
-        ? node.grouped_products.map(id => {
+        ? node.grouped_products.map((id) => {
             const product = products.find(
-              product => product.wordpress_id === id
-            )
-            return product ? product.id : null
+              (product) => product.wordpress_id === id
+            );
+            return product ? product.id : null;
           })
-        : null
+        : null;
       if (grouped_products) {
-        node.grouped_products_nodes___NODE = grouped_products
+        node.grouped_products_nodes___NODE = grouped_products;
       } else {
-        node.grouped_products_nodes = []
+        node.grouped_products_nodes = [];
       }
     }
-    return node
-  })
-}
+    return node;
+  });
+};
 
 /**
  * Turn multi part endpoints into camelCase
@@ -227,15 +240,15 @@ const mapGroupedProducts = nodes => {
  *
  * @return The camelCase field name
  */
-const normaliseFieldName = name => {
-  const parts = name.split("/")
+const normaliseFieldName = (name) => {
+  const parts = name.split("/");
   return parts.reduce((whole, partial) => {
     if (whole === "") {
-      return whole.concat(partial)
+      return whole.concat(partial);
     }
-    return whole.concat(partial[0].toUpperCase() + partial.slice(1))
-  }, "")
-}
+    return whole.concat(partial[0].toUpperCase() + partial.slice(1));
+  }, "");
+};
 
 const downloadMedia = async ({
   n,
@@ -246,13 +259,13 @@ const downloadMedia = async ({
   createNode,
   createNodeId,
 }) => {
-  let fileNodeID
-  const mediaDataCacheKey = `wordpress-media-${image.id}`
-  const cacheMediaData = await cache.get(mediaDataCacheKey)
+  let fileNodeID;
+  const mediaDataCacheKey = `wordpress-media-${image.id}`;
+  const cacheMediaData = await cache.get(mediaDataCacheKey);
 
   if (cacheMediaData && n.modified === cacheMediaData.modified) {
-    fileNodeID = cacheMediaData.fileNodeID
-    touchNode({ nodeId: fileNodeID })
+    fileNodeID = cacheMediaData.fileNodeID;
+    touchNode({ nodeId: fileNodeID });
   }
 
   if (!fileNodeID) {
@@ -264,24 +277,24 @@ const downloadMedia = async ({
         createNode,
         createNodeId,
         parentNodeId: n.id.toString(),
-      })
+      });
 
       if (fileNode) {
-        fileNodeID = fileNode.id
+        fileNodeID = fileNode.id;
 
         await cache.set(mediaDataCacheKey, {
           fileNodeID,
           modified: n.modified,
-        })
+        });
       }
     } catch (e) {
       // Ignore
     }
   }
   if (fileNodeID) {
-    image.localFile___NODE = fileNodeID
+    image.localFile___NODE = fileNodeID;
   }
-}
+};
 
 const mapMediaToNodes = async ({
   nodes,
@@ -292,7 +305,7 @@ const mapMediaToNodes = async ({
   touchNode,
 }) => {
   return Promise.all(
-    nodes.map(async n => {
+    nodes.map(async (n) => {
       const commonParams = {
         n,
         store,
@@ -300,16 +313,16 @@ const mapMediaToNodes = async ({
         touchNode,
         createNode,
         createNodeId,
-      }
+      };
 
       if (n.product_variations && n.product_variations.length) {
         for await (let variation of n.product_variations) {
-          const { image } = variation
+          const { image } = variation;
           if (image) {
             await downloadMedia({
               image,
               ...commonParams,
-            })
+            });
           }
         }
       }
@@ -319,23 +332,23 @@ const mapMediaToNodes = async ({
           await downloadMedia({
             image,
             ...commonParams,
-          })
+          });
         }
-        return n
+        return n;
       } else if (n.image && n.image.id) {
-        const { image } = n
+        const { image } = n;
         await downloadMedia({
           image,
           ...commonParams,
-        })
+        });
 
-        return n
+        return n;
       } else {
-        return n
+        return n;
       }
     })
-  )
-}
+  );
+};
 
 module.exports = {
   processNode,
@@ -346,4 +359,4 @@ module.exports = {
   mapRelatedProducts,
   mapGroupedProducts,
   asyncGetProductVariations,
-}
+};

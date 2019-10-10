@@ -9,14 +9,14 @@ const {
   mapRelatedProducts,
   mapGroupedProducts,
   asyncGetProductVariations,
-} = require("./helpers")
+} = require("./helpers");
 
 exports.sourceNodes = async (
   { actions, createNodeId, createContentDigest, store, cache },
   configOptions
 ) => {
-  const { createNode, touchNode } = actions
-  delete configOptions.plugins
+  const { createNode, touchNode } = actions;
+  delete configOptions.plugins;
 
   const {
     api,
@@ -25,7 +25,8 @@ exports.sourceNodes = async (
     fields,
     api_version = "wc/v3",
     per_page,
-  } = configOptions
+    wpAPIPrefix = null,
+  } = configOptions;
 
   // set up WooCommerce node api tool
   const WooCommerce = new WooCommerceRestApi({
@@ -33,50 +34,61 @@ exports.sourceNodes = async (
     consumerKey: api_keys.consumer_key,
     consumerSecret: api_keys.consumer_secret,
     version: api_version,
-  })
+    wpAPIPrefix,
+  });
 
-  // Fetch Node and turn our response to JSON
-  const fetchNodes = async fieldName => {
+  // Fetch Node data for a given field name
+  const fetchNodes = async (fieldName) => {
     let data_ = [];
     let page = 1;
     let pages;
 
     do {
-      let args = per_page ? { per_page, page } : { page }
-      const res = await WooCommerce.get(fieldName, args);
-
-      if (res.status !== 200) {
-        console.warn(`
-          \n========== WARNING FOR FIELD ${fieldName} ==========\n`)
-        console.warn(`The following error message was produced: ${res.data}`)
-        console.warn(`\n========== END WARNING ==========\n`)
-        return []
-      }
-
-      data_ = [...data_, ...res.data];
-      pages = parseInt(res.headers['x-wp-totalpages']);
-      page++
+      let args = per_page ? { per_page, page } : { page };
+      await WooCommerce.get(fieldName, args)
+        .then((response) => {
+          if (response.status === 200) {
+            data_ = [...data_, ...response.data];
+            pages = parseInt(response.headers["x-wp-totalpages"]);
+            page++;
+          } else {
+            console.warn(`
+              ========== WARNING FOR FIELD ${fieldName} ===========
+              The following error status was produced: ${response.data}
+              ================== END WARNING ==================
+            `);
+            return [];
+          }
+        })
+        .catch((error) => {
+          console.warn(`
+            ========== WARNING FOR FIELD ${fieldName} ===========
+            The following error status was produced: ${error.response.status}
+            ================== END WARNING ==================
+          `);
+          return [];
+        });
     } while (page <= pages);
 
     return data_;
-  }
+  };
 
   // Loop over each field set in configOptions and process/create nodes
   async function fetchNodesAndCreate(array) {
-    let nodes = []
+    let nodes = [];
     for (const field of array) {
-      const fieldName = normaliseFieldName(field)
-      let tempNodes = await fetchNodes(field)
-      tempNodes = tempNodes.map(node => ({
+      const fieldName = normaliseFieldName(field);
+      let tempNodes = await fetchNodes(field);
+      tempNodes = tempNodes.map((node) => ({
         ...node,
         id: createNodeId(`woocommerce-${fieldName}-${node.id}`),
         wordpress_id: node.id,
         __type: `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`,
-      }))
-      nodes = nodes.concat(tempNodes)
+      }));
+      nodes = nodes.concat(tempNodes);
     }
 
-    nodes = await asyncGetProductVariations(nodes, WooCommerce)
+    nodes = await asyncGetProductVariations(nodes, WooCommerce);
     nodes = await mapMediaToNodes({
       nodes,
       store,
@@ -84,20 +96,20 @@ exports.sourceNodes = async (
       createNode,
       createNodeId,
       touchNode,
-    })
+    });
 
-    nodes = mapProductsToCategories(nodes)
-    nodes = mapProductsToTags(nodes)
-    nodes = mapRelatedProducts(nodes)
-    nodes = mapGroupedProducts(nodes)
+    nodes = mapProductsToCategories(nodes);
+    nodes = mapProductsToTags(nodes);
+    nodes = mapRelatedProducts(nodes);
+    nodes = mapGroupedProducts(nodes);
 
-    nodes = nodes.map(node => processNode(createContentDigest, node))
+    nodes = nodes.map((node) => processNode(createContentDigest, node));
 
-    nodes.forEach(node => {
-      createNode(node)
-    })
+    nodes.forEach((node) => {
+      createNode(node);
+    });
   }
 
-  await fetchNodesAndCreate(fields)
-  return
-}
+  await fetchNodesAndCreate(fields);
+  return;
+};
