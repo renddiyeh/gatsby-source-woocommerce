@@ -23,7 +23,7 @@ exports.sourceNodes = async (
     https,
     api_keys,
     fields,
-    api_version = "wc/v1",
+    api_version = "wc/v3",
     per_page,
   } = configOptions
 
