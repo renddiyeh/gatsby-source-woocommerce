@@ -241,7 +241,7 @@ const mapGroupedProducts = (nodes) => {
  * @return The camelCase field name
  */
 const normaliseFieldName = (name) => {
-  const parts = name.split("/");
+  const parts = name.split("/").map(fieldname => fieldname.toLowerCase());
   return parts.reduce((whole, partial) => {
     if (whole === "") {
       return whole.concat(partial);
