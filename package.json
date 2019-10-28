@@ -4,7 +4,7 @@
   "description": "Gatsby source plugin for WooCommerce with improved field type support",
   "main": "gatsby-node.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "author": "Dominik Paschke, forked from Marc Glasser",
   "license": "ISC",
@@ -24,5 +24,8 @@
     "gatsby-plugin",
     "gatsby-source-plugin",
     "woocommerce"
-  ]
+  ],
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
 }
