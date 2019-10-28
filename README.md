@@ -334,6 +334,7 @@ Some example queries for the fixed and fluid types are below.
 You can visit [gatsby-image](https://www.gatsbyjs.org/packages/gatsby-image/) for more information, and to learn about the different types of queries.
 
 ## Changelog
+- 0.8.1: Case insensitive field names & start of test suite c/o [Siemah](https://github.com/siemah)
 - 0.8.0: Add wpAPIPrefix option for custom WP REST API url prefix.
 - 0.7.0: Change to [new library to access the WooCommerce REST API](https://github.com/woocommerce/woocommerce-rest-api-js-lib), since [the old one is now obsolete](https://github.com/woocommerce/wc-api-node). Change behaviour to pull in all resources of a given field name, when there are more resources than the value of the per_page option. Make 'wc/v3' default API version.
 - 0.6.2: [Fix race condition when adding sharp images to products](https://github.com/pasdo501/gatsby-source-woocommerce/commit/e37d841c54227a9011cfc2f9b7e971e78b86a257)
