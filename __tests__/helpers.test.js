@@ -32,6 +32,18 @@ describe('Helpers:', () => {
         contentDigest,
       },
     });
+
+    expect(processNodeResult).toMatchSnapshot({
+      id: expect.any(Number),
+      categories: expect.any(Array),
+      wordpress_id: expect.any(Number),
+      parent: expect.any(Object),
+      children: expect.any(Array),
+      internal: {
+        type: expect.any(String),
+        contentDigest: expect.any(Number),
+      },
+    });
     
   });
   
