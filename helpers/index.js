@@ -344,7 +344,7 @@ const downloadACFMedia = async ({
     }
   }
   if (fileNodeID) {
-    n.acf[field + '_localFileID___NODE'] = fileNodeID;
+    n.acf[field + '_localFile___NODE'] = fileNodeID;
   }
 };
 
