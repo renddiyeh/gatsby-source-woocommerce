@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Helpers: should creates processNode 1`] = `
+Object {
+  "categories": Any<Array>,
+  "children": Any<Array>,
+  "id": Any<Number>,
+  "internal": Object {
+    "contentDigest": Any<Number>,
+    "type": Any<String>,
+  },
+  "parent": Any<Object>,
+  "wordpress_id": Any<Number>,
+}
+`;
