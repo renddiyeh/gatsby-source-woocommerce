@@ -1,5 +1,8 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
 
+// @8ctopotamus customization
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif']
+
 const processNode = (createContentDigest, node) => {
   const { __type } = node;
   delete node.__type;
@@ -241,7 +244,7 @@ const mapGroupedProducts = (nodes) => {
  * @return The camelCase field name
  */
 const normaliseFieldName = (name) => {
-  const parts = name.split("/").map(fieldname => fieldname.toLowerCase());
+  const parts = name.split("/");
   return parts.reduce((whole, partial) => {
     if (whole === "") {
       return whole.concat(partial);
@@ -296,6 +299,55 @@ const downloadMedia = async ({
   }
 };
 
+// @8ctopotamus customization
+const downloadACFMedia = async ({
+  n,
+  field,
+  src,
+  store,
+  cache,
+  touchNode,
+  createNode,
+  createNodeId,
+}) => {
+  console.log()
+  let fileNodeID;
+  const mediaDataCacheKey = `woocommerce-acf-media-${src}`;
+  const cacheMediaData = await cache.get(mediaDataCacheKey);
+
+  if (cacheMediaData && n.modified === cacheMediaData.modified) {
+    fileNodeID = cacheMediaData.fileNodeID;
+    touchNode({ nodeId: fileNodeID });
+  }
+
+  if (!fileNodeID) {
+    try {
+      const fileNode = await createRemoteFileNode({
+        url: src,
+        store,
+        cache,
+        createNode,
+        createNodeId,
+        parentNodeId: n.id.toString(),
+      });
+
+      if (fileNode) {
+        fileNodeID = fileNode.id;
+
+        await cache.set(mediaDataCacheKey, {
+          fileNodeID,
+          modified: n.modified,
+        });
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+  if (fileNodeID) {
+    n.acf[field + '_localFile___NODE'] = fileNodeID;
+  }
+};
+
 const mapMediaToNodes = async ({
   nodes,
   store,
@@ -326,6 +378,24 @@ const mapMediaToNodes = async ({
           }
         }
       }
+      
+      // @8ctopotamus customization
+      if (n.acf) {
+        Object.entries(n.acf).forEach(async entry => {
+          const [ field, val ] = entry
+          if (val && typeof val === 'string') {
+            const isImage = imageExtensions.some(ext => val.includes(ext))
+            if (isImage) {
+              await downloadACFMedia({
+                field,
+                src: val,
+                ...commonParams,
+              });
+            }
+          }
+        })
+      }
+
 
       if (n.images && n.images.length) {
         for (let image of n.images) {
