@@ -1,27 +1,30 @@
-const { normaliseFieldName, processNode, } = require('../helpers/');
+const { normaliseFieldName, processNode } = require("../helpers/");
 
-describe('Helpers:', () => {
-
-  it('should normalize fieldname', () => {
-    expect(normaliseFieldName('products/cateGorIes')).toEqual('productsCategories')
-    expect(normaliseFieldName('products/categories')).toEqual('productsCategories')
+describe("Helpers:", () => {
+  it("should normalize fieldname", () => {
+    expect(normaliseFieldName("products/categories")).toEqual(
+      "productsCategories"
+    );
   });
 
-  it('should creates processNode', () => {
-    const __type = 'wcProducts';
+  it("should return correct data from processNode", () => {
+    const __type = "wcProducts";
+    const id = 1234;
+    const cat_id = 23;
+
     const nodeWithOutType = {
-      id: 1345,
-      categories: [{ id: 23 }],
-      wordpress_id: 1345,
+      id,
+      categories: [{ id: cat_id }],
+      wordpress_id: id,
     };
     const node = {
       __type,
-      ...nodeWithOutType
+      ...nodeWithOutType,
     };
-    const contentDigest = 19;
+    const contentDigest = "digest_string";
     const createContentDigest = jest.fn(() => contentDigest);
     const processNodeResult = processNode(createContentDigest, node);
-    
+
     expect(createContentDigest).toBeCalled();
     expect(processNodeResult).toEqual({
       ...nodeWithOutType,
@@ -34,17 +37,20 @@ describe('Helpers:', () => {
     });
 
     expect(processNodeResult).toMatchSnapshot({
-      id: expect.any(Number),
-      categories: expect.any(Array),
-      wordpress_id: expect.any(Number),
+      id: id,
+      categories: [
+        {
+          id: cat_id,
+          wordpress_id: cat_id,
+        },
+      ],
+      wordpress_id: id,
       parent: expect.any(Object),
       children: expect.any(Array),
       internal: {
-        type: expect.any(String),
-        contentDigest: expect.any(Number),
+        type: __type,
+        contentDigest: contentDigest,
       },
     });
-    
   });
-  
 });

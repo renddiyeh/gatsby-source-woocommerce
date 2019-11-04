@@ -334,6 +334,7 @@ Some example queries for the fixed and fluid types are below.
 You can visit [gatsby-image](https://www.gatsbyjs.org/packages/gatsby-image/) for more information, and to learn about the different types of queries.
 
 ## Changelog
+- 0.9.0: [ACF image support](https://github.com/pasdo501/gatsby-source-woocommerce/commit/f5f84c23a7ca33f4f1a4848edda7e699f2e2759a), c/o [8ctopotamus](https://github.com/8ctopotamus). [Test suite extension](https://github.com/pasdo501/gatsby-source-woocommerce/commit/6b00342ee58876c8655e345bed367adf07338ec4) (node processing, without field mapping). Revert case insensitive field names - API request doesn't care, but allows for fields with capitals; more freedom to the dev.
 - 0.8.1: Case insensitive field names & start of test suite c/o [Siemah](https://github.com/siemah)
 - 0.8.0: Add wpAPIPrefix option for custom WP REST API url prefix.
 - 0.7.0: Change to [new library to access the WooCommerce REST API](https://github.com/woocommerce/woocommerce-rest-api-js-lib), since [the old one is now obsolete](https://github.com/woocommerce/wc-api-node). Change behaviour to pull in all resources of a given field name, when there are more resources than the value of the per_page option. Make 'wc/v3' default API version.

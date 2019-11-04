@@ -2,14 +2,19 @@
 
 exports[`Helpers: should creates processNode 1`] = `
 Object {
-  "categories": Any<Array>,
+  "categories": Array [
+    Object {
+      "id": 23,
+      "wordpress_id": 23,
+    },
+  ],
   "children": Any<Array>,
-  "id": Any<Number>,
+  "id": 1234,
   "internal": Object {
-    "contentDigest": Any<Number>,
-    "type": Any<String>,
+    "contentDigest": "digest_string",
+    "type": "wcProducts",
   },
   "parent": Any<Object>,
-  "wordpress_id": Any<Number>,
+  "wordpress_id": 1234,
 }
 `;
