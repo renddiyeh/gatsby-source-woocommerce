@@ -41,7 +41,7 @@ plugins:[
       fields: ['products', 'products/categories'],
       // Send the API keys as query string parameters instead of using the authorization header
       // OPTIONAL: defaults to false
-      query_string_auth: true,
+      query_string_auth: false,
       // Version of the woocommerce API to use
       // OPTIONAL: defaults to 'wc/v3'
       api_version: 'wc/v3',
