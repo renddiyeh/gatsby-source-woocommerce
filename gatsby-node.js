@@ -26,6 +26,7 @@ exports.sourceNodes = async (
     api_version = "wc/v3",
     per_page,
     wpAPIPrefix = null,
+    query_string_auth = false,
   } = configOptions;
 
   // set up WooCommerce node api tool
@@ -35,6 +36,7 @@ exports.sourceNodes = async (
     consumerSecret: api_keys.consumer_secret,
     version: api_version,
     wpAPIPrefix,
+    queryStringAuth: query_string_auth,
   });
 
   // Fetch Node data for a given field name
