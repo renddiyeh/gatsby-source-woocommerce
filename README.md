@@ -46,10 +46,18 @@ plugins:[
       // OPTIONAL: defaults to 'wc/v3'
       api_version: 'wc/v3',
       // OPTIONAL: How many results to retrieve *per request*
-      per_page: 100
+      per_page: 100,
       // OPTIONAL: Custom WP REST API url prefix, only needed if not using 
       // the default wp-json prefix.
-      wpAPIPrefix: 'wp-rest'
+      wpAPIPrefix: 'wp-rest',
+      // OPTIONAL: Support for URLs with ports, e.g. 8080; defaults to no port
+      port: '8080',
+      // OPTIONAL: Encoding; default to 'utf8'
+      encoding: 'utf8',
+      // OPTIONAL: Custom Axios config (see https://github.com/axios/axios) - note that this can override other options.
+      axios_config: {
+        // Axios config options
+      }
     }
   }
 ]
@@ -337,6 +345,7 @@ Some example queries for the fixed and fluid types are below.
 You can visit [gatsby-image](https://www.gatsbyjs.org/packages/gatsby-image/) for more information, and to learn about the different types of queries.
 
 ## Changelog
+- 0.10.0: Expanded API config options, including [Basic Authentication as query string](https://github.com/pasdo501/gatsby-source-woocommerce/commit/9bcbafdbf22921bea6afa7a3b786764c2ac6fd25), and custom port, encoding, & axios config options.
 - 0.9.0: [ACF image support](https://github.com/pasdo501/gatsby-source-woocommerce/commit/f5f84c23a7ca33f4f1a4848edda7e699f2e2759a), c/o [8ctopotamus](https://github.com/8ctopotamus). [Test suite extension](https://github.com/pasdo501/gatsby-source-woocommerce/commit/6b00342ee58876c8655e345bed367adf07338ec4) (node processing, without field mapping). Revert case insensitive field names - API request doesn't care, but allows for fields with capitals; more freedom to the dev.
 - 0.8.1: Case insensitive field names & start of test suite c/o [Siemah](https://github.com/siemah)
 - 0.8.0: Add wpAPIPrefix option for custom WP REST API url prefix.

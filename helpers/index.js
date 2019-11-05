@@ -76,7 +76,7 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
             .catch((error) => {
               console.warn(`
               Warning: error while fetching variations for ${node.name}.
-              Error code: ${error.response.status}.
+              Error: ${error}.
             `);
               pages = 0;
             });

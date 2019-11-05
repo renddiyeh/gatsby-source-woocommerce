@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Helpers: should creates processNode 1`] = `
+exports[`Helpers: should return correct data from processNode 1`] = `
 Object {
   "categories": Array [
     Object {

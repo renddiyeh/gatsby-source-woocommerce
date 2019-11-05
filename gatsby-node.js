@@ -27,6 +27,9 @@ exports.sourceNodes = async (
     per_page,
     wpAPIPrefix = null,
     query_string_auth = false,
+    port = "",
+    encoding = "",
+    axios_config = null,
   } = configOptions;
 
   // set up WooCommerce node api tool
@@ -37,6 +40,9 @@ exports.sourceNodes = async (
     version: api_version,
     wpAPIPrefix,
     queryStringAuth: query_string_auth,
+    port,
+    encoding,
+    axiosConfig: axios_config,
   });
 
   // Fetch Node data for a given field name
@@ -65,7 +71,7 @@ exports.sourceNodes = async (
         .catch((error) => {
           console.warn(`
             ========== WARNING FOR FIELD ${fieldName} ===========
-            The following error status was produced: ${error.response.status}
+            The following error status was produced: ${error}
             ================== END WARNING ==================
           `);
           return [];
