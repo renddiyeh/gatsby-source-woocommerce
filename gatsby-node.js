@@ -122,3 +122,40 @@ exports.sourceNodes = async (
   await fetchNodesAndCreate(fields);
   return;
 };
+
+exports.createSchemaCustomization = ({ actions, schema }, configOptions) => {
+  const { createTypes } = actions;
+  const { fields } = configOptions;
+
+  const typeDefs = fields.map((field) => {
+    const fieldName = normaliseFieldName(field);
+    const fieldType = `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`;
+
+    return schema.buildObjectType({
+      name: fieldType,
+      fields: {
+        wordpress_parent: {
+          type: fieldType,
+          resolve(source, args, context, info) {
+            return context.nodeModel
+              .getAllNodes({ type: fieldType })
+              .find((node) => node.wordpress_id === source.wordpress_parent_id);
+          },
+        },
+        wordpress_children: {
+          type: `[${fieldType}]`,
+          resolve(source, args, context, info) {
+            return context.nodeModel
+              .getAllNodes({ type: fieldType })
+              .filter(
+                (node) => node.wordpress_parent_id === source.wordpress_id
+              );
+          },
+        },
+      },
+      interfaces: ["Node"],
+    });
+  });
+
+  createTypes(typeDefs);
+};
