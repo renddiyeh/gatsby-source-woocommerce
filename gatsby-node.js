@@ -91,6 +91,7 @@ exports.sourceNodes = async (
         ...node,
         id: createNodeId(`woocommerce-${fieldName}-${node.id}`),
         wordpress_id: node.id,
+        wordpress_parent_id: node.parent,
         __type: `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`,
       }));
       nodes = nodes.concat(tempNodes);
