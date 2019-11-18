@@ -130,10 +130,19 @@ exports.createSchemaCustomization = ({ actions, schema }, configOptions) => {
   const typeDefs = fields.map((field) => {
     const fieldName = normaliseFieldName(field);
     const fieldType = `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`;
+    let extra_fields = {}
+
+    if (fieldName.toLowerCase() === 'products') {
+      // Product fields
+      extra_fields = {
+        price: "String",
+      }
+    }
 
     return schema.buildObjectType({
       name: fieldType,
       fields: {
+        ...extra_fields,
         wordpress_parent: {
           type: fieldType,
           resolve(source, args, context, info) {
