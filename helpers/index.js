@@ -291,7 +291,8 @@ const downloadMedia = async ({
         });
       }
     } catch (e) {
-      // Ignore
+      console.warn('Issue with media download.');
+      console.warn(e);
     }
   }
   if (fileNodeID) {
