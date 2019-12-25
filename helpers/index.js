@@ -1,9 +1,23 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
 
+/**
+ * Add date and time stamp to message before logging to console.
+ *
+ * @param {string} message
+ */
+const timeStampedLog = (message) => {
+  console.log(`${(new Date()).toISOString().match(/(\d\d\:\d\d\:\d\d\.\d\d\d\w)/)[0]} > ${message}`)
+}
+
 // @8ctopotamus customization
 const imageExtensions = [".jpg", ".jpeg", ".png", ".gif"];
 
-const processNode = (createContentDigest, node) => {
+let processNodeTimer = 0;
+const processNode = (createContentDigest, node, verbose, processNodeStartTime) => {
+  if (0 === processNodeTimer) {
+    processNodeTimer = processNodeStartTime
+  }
+
   const { __type } = node;
   delete node.__type;
 
@@ -29,6 +43,20 @@ const processNode = (createContentDigest, node) => {
       contentDigest: createContentDigest(nodeContent),
     },
   });
+
+  if (verbose) {
+    //print progress every 1500 ms
+    if ((new Date().getTime() - processNodeTimer) > 1500) {
+      processNodeTimer = new Date().getTime();
+      if (__type === "wcProducts") {
+        timeStampedLog(`gatsby-source-woocommerce: Importing product { id: ${node.id}, name: ${node.name} }, with ${node.variations.length} variations`);
+      }
+      else {
+        timeStampedLog(`gatsby-source-woocommerce: Importing { id: ${node.id}, name: ${node.name} }`);
+      }
+    }
+  }
+
   return nodeData;
 };
 
@@ -41,7 +69,12 @@ const processNode = (createContentDigest, node) => {
  *
  * @return {array} Processed nodes
  */
-const asyncGetProductVariations = async (nodes, WooCommerce) => {
+const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
+  if (verbose) {
+    timeStampedLog(`gatsby-source-woocommerce: Fetching product variations for ${nodes.length} nodes`);
+  }
+  const asyncGetProductVariationsStartTime = new Date().getTime();
+  let asyncGetProductVariationsTimer = asyncGetProductVariationsStartTime;
   const processedNodes = [];
   const promises = nodes.map(async (node) => {
     if (node.__type === "wcProducts") {
@@ -65,6 +98,13 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
                 ];
                 pages = parseInt(response.headers["x-wp-totalpages"]);
                 page++;
+                if (verbose) {
+                  //print progress every 1500 ms
+                  if ((new Date().getTime() - asyncGetProductVariationsTimer) > 1500) {
+                    asyncGetProductVariationsTimer = new Date().getTime()
+                    timeStampedLog(`gatsby-source-woocommerce: Retrieved ${variations_path}...`)
+                  }
+                }
               } else {
                 console.warn(`
                 Warning: error while fetching variations for ${node.name}.
@@ -85,16 +125,17 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
         node.product_variations = [];
       }
     }
-    return new Promise((res, rej) => {res(node)})
+    return new Promise((res, rej) => { res(node) })
   })
 
   await Promise.all(promises)
-  .then((results) => {
-    results.forEach(async (node) => {
-      processedNodes.push(node);
+    .then((results) => {
+      results.forEach(async (node) => {
+        processedNodes.push(node);
+      })
     })
-  })
 
+  timeStampedLog(`gatsby-source-woocommerce: ${promises.length} product variations retrieved for ${nodes.length} nodes in ${(new Date().getTime() - asyncGetProductVariationsStartTime) / 1000}s`);
   return processedNodes;
 };
 
@@ -194,11 +235,11 @@ const mapRelatedProducts = (nodes) => {
     if (node.__type === "wcProducts") {
       const related_products = node.related_ids
         ? node.related_ids.map((id) => {
-            const product = products.find(
-              (product) => product.wordpress_id === id
-            );
-            return product ? product.id : null;
-          })
+          const product = products.find(
+            (product) => product.wordpress_id === id
+          );
+          return product ? product.id : null;
+        })
         : null;
       if (related_products) {
         node.related_products___NODE = related_products;
@@ -224,11 +265,11 @@ const mapGroupedProducts = (nodes) => {
     if (node.__type === "wcProducts") {
       const grouped_products = node.grouped_products
         ? node.grouped_products.map((id) => {
-            const product = products.find(
-              (product) => product.wordpress_id === id
-            );
-            return product ? product.id : null;
-          })
+          const product = products.find(
+            (product) => product.wordpress_id === id
+          );
+          return product ? product.id : null;
+        })
         : null;
       if (grouped_products) {
         node.grouped_products_nodes___NODE = grouped_products;
@@ -433,4 +474,5 @@ module.exports = {
   mapRelatedProducts,
   mapGroupedProducts,
   asyncGetProductVariations,
+  timeStampedLog,
 };

@@ -9,6 +9,7 @@ const {
   mapRelatedProducts,
   mapGroupedProducts,
   asyncGetProductVariations,
+  timeStampedLog,
 } = require("./helpers");
 
 exports.sourceNodes = async (
@@ -30,6 +31,7 @@ exports.sourceNodes = async (
     port = "",
     encoding = "",
     axios_config = null,
+    verbose = true,
   } = configOptions;
 
   // set up WooCommerce node api tool
@@ -87,6 +89,9 @@ exports.sourceNodes = async (
     for (const field of array) {
       const fieldName = normaliseFieldName(field);
       let tempNodes = await fetchNodes(field);
+      if (verbose) {
+        timeStampedLog(`gatsby-source-woocommerce: Fetching ${tempNodes.length} nodes for field: ${field}`);
+      }
       tempNodes = tempNodes.map((node) => ({
         ...node,
         id: createNodeId(`woocommerce-${fieldName}-${node.id}`),
@@ -95,9 +100,11 @@ exports.sourceNodes = async (
         __type: `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`,
       }));
       nodes = nodes.concat(tempNodes);
+      if (verbose) {
+        timeStampedLog(`gatsby-source-woocommerce: Completed fetching nodes for field: ${field}`);
+      }
     }
-
-    nodes = await asyncGetProductVariations(nodes, WooCommerce);
+    nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose);
     nodes = await mapMediaToNodes({
       nodes,
       store,
@@ -107,15 +114,22 @@ exports.sourceNodes = async (
       touchNode,
     });
 
+    let startTime = new Date().getTime();
+
     nodes = mapProductsToCategories(nodes);
     nodes = mapProductsToTags(nodes);
     nodes = mapRelatedProducts(nodes);
     nodes = mapGroupedProducts(nodes);
-    nodes = nodes.map((node) => processNode(createContentDigest, node));
+    nodes = nodes.map((node) => processNode(createContentDigest, node, verbose, startTime));
+
     nodes.forEach((node) => {
       createNode(node);
     });
+    if (verbose) {
+      timeStampedLog(`gatsby-source-woocommerce: ${nodes.length} nodes mapped, processed, and created in ${(new Date().getTime() - startTime) / 1000}s`);
+    }
   }
+
   await fetchNodesAndCreate(fields);
   return;
 };
