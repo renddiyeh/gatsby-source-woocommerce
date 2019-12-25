@@ -111,14 +111,11 @@ exports.sourceNodes = async (
     nodes = mapProductsToTags(nodes);
     nodes = mapRelatedProducts(nodes);
     nodes = mapGroupedProducts(nodes);
-
     nodes = nodes.map((node) => processNode(createContentDigest, node));
-
     nodes.forEach((node) => {
       createNode(node);
     });
   }
-
   await fetchNodesAndCreate(fields);
   return;
 };

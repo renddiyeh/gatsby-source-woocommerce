@@ -29,7 +29,6 @@ const processNode = (createContentDigest, node) => {
       contentDigest: createContentDigest(nodeContent),
     },
   });
-
   return nodeData;
 };
 
@@ -44,17 +43,18 @@ const processNode = (createContentDigest, node) => {
  */
 const asyncGetProductVariations = async (nodes, WooCommerce) => {
   const processedNodes = [];
-  for await (let node of nodes) {
+  const promises = nodes.map(async (node) => {
     if (node.__type === "wcProducts") {
       if (node.variations && node.variations.length) {
         let page = 1;
-        let pages;
+        let pages = 1;
         node.product_variations = [];
+        const variations_path = `products/${node.wordpress_id}/variations`;
 
         do {
-          let args = { page, per_page: 100 };
+          const args = { page, per_page: 100 };
           await WooCommerce.get(
-            `products/${node.wordpress_id}/variations`,
+            variations_path,
             args
           )
             .then((response) => {
@@ -84,11 +84,16 @@ const asyncGetProductVariations = async (nodes, WooCommerce) => {
       } else {
         node.product_variations = [];
       }
-      processedNodes.push(node);
-    } else {
-      processedNodes.push(node);
     }
-  }
+    return new Promise((res, rej) => {res(node)})
+  })
+
+  await Promise.all(promises)
+  .then((results) => {
+    results.forEach(async (node) => {
+      processedNodes.push(node);
+    })
+  })
 
   return processedNodes;
 };
@@ -310,6 +315,7 @@ const downloadACFMedia = async ({
   createNode,
   createNodeId,
 }) => {
+
   let fileNodeID;
   const mediaDataCacheKey = `woocommerce-acf-media-${src}`;
   const cacheMediaData = await cache.get(mediaDataCacheKey);
