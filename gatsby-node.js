@@ -11,9 +11,14 @@ const {
   asyncGetProductVariations,
 } = require("./helpers");
 
+const {
+  getWCNodeId,
+  mapNodeNormalizeMetadata
+} = require("./helpers/addon-data");
+
 exports.sourceNodes = async (
-  { actions, createNodeId, createContentDigest, store, cache },
-  configOptions
+    { actions, createNodeId, createContentDigest, store, cache },
+    configOptions
 ) => {
   const { createNode, touchNode } = actions;
   delete configOptions.plugins;
@@ -54,28 +59,28 @@ exports.sourceNodes = async (
     do {
       let args = per_page ? { per_page, page } : { page };
       await WooCommerce.get(fieldName, args)
-        .then((response) => {
-          if (response.status === 200) {
-            data_ = [...data_, ...response.data];
-            pages = parseInt(response.headers["x-wp-totalpages"]);
-            page++;
-          } else {
-            console.warn(`
+          .then((response) => {
+            if (response.status === 200) {
+              data_ = [...data_, ...response.data];
+              pages = parseInt(response.headers["x-wp-totalpages"]);
+              page++;
+            } else {
+              console.warn(`
               ========== WARNING FOR FIELD ${fieldName} ===========
               The following error status was produced: ${response.data}
               ================== END WARNING ==================
             `);
-            return [];
-          }
-        })
-        .catch((error) => {
-          console.warn(`
+              return [];
+            }
+          })
+          .catch((error) => {
+            console.warn(`
             ========== WARNING FOR FIELD ${fieldName} ===========
             The following error status was produced: ${error}
             ================== END WARNING ==================
           `);
-          return [];
-        });
+            return [];
+          });
     } while (page <= pages);
 
     return data_;
@@ -89,8 +94,8 @@ exports.sourceNodes = async (
       let tempNodes = await fetchNodes(field);
       tempNodes = tempNodes.map((node) => ({
         ...node,
-        id: createNodeId(`woocommerce-${fieldName}-${node.id}`),
-        wordpress_id: node.id,
+        id: createNodeId(`woocommerce-${fieldName}-${getWCNodeId(node, fieldName)}`),
+        wordpress_id: getWCNodeId(node, fieldName),
         wordpress_parent_id: node.parent,
         __type: `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`,
       }));
@@ -111,6 +116,7 @@ exports.sourceNodes = async (
     nodes = mapProductsToTags(nodes);
     nodes = mapRelatedProducts(nodes);
     nodes = mapGroupedProducts(nodes);
+    nodes = mapNodeNormalizeMetadata(nodes);
 
     nodes = nodes.map((node) => processNode(createContentDigest, node));
 
@@ -138,18 +144,18 @@ exports.createSchemaCustomization = ({ actions, schema }, configOptions) => {
           type: fieldType,
           resolve(source, args, context, info) {
             return context.nodeModel
-              .getAllNodes({ type: fieldType })
-              .find((node) => node.wordpress_id === source.wordpress_parent_id);
+                .getAllNodes({ type: fieldType })
+                .find((node) => node.wordpress_id === source.wordpress_parent_id);
           },
         },
         wordpress_children: {
           type: `[${fieldType}]`,
           resolve(source, args, context, info) {
             return context.nodeModel
-              .getAllNodes({ type: fieldType })
-              .filter(
-                (node) => node.wordpress_parent_id === source.wordpress_id
-              );
+                .getAllNodes({ type: fieldType })
+                .filter(
+                    (node) => node.wordpress_parent_id === source.wordpress_id
+                );
           },
         },
       },
