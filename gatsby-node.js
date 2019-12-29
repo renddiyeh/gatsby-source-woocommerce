@@ -14,7 +14,7 @@ const {
 const {
   getWCNodeId,
   mapNodeNormalizeMetadata
-} = require("./helpers/addon-data");
+} = require("./helpers/misc-data");
 
 exports.sourceNodes = async (
     { actions, createNodeId, createContentDigest, store, cache },

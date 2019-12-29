@@ -1,4 +1,4 @@
-const isAddonData = (fieldName) => fieldName.startsWith('data');
+// const isAddonData = (fieldName) => fieldName.startsWith('data');
 const randomId = () => Math.floor(Math.random()*10000000);
 const getWCNodeId = (node, fieldName) => {
   if (!node) {
@@ -11,12 +11,12 @@ const getWCNodeId = (node, fieldName) => {
 const mapNodeNormalizeMetadata = (nodes) => {
   return nodes.map(node => {
     if (!node.meta_data || node.meta_data.length === 0) return node;
-    node.meta_data = node.meta_data.map((meta) => {
+    const meta_data = node.meta_data.map((meta) => {
       let value = Array.isArray(meta.value) ? meta.value : [meta.value];
       value = value.map(val => String(val));
       return {...meta, ...{value}};
     });
-    return node;
+    return {...node, ...{meta_data}};
   })
 };
 
