@@ -12,6 +12,11 @@ const {
   timeStampedLog,
 } = require("./helpers");
 
+const {
+  getWCNodeId,
+  mapNodeNormalizeMetadata,
+} = require("./helpers/misc-data");
+
 exports.sourceNodes = async (
   { actions, createNodeId, createContentDigest, store, cache },
   configOptions
@@ -90,18 +95,24 @@ exports.sourceNodes = async (
       const fieldName = normaliseFieldName(field);
       let tempNodes = await fetchNodes(field);
       if (verbose) {
-        timeStampedLog(`gatsby-source-woocommerce: Fetching ${tempNodes.length} nodes for field: ${field}`);
+        timeStampedLog(
+          `gatsby-source-woocommerce: Fetching ${tempNodes.length} nodes for field: ${field}`
+        );
       }
       tempNodes = tempNodes.map((node) => ({
         ...node,
-        id: createNodeId(`woocommerce-${fieldName}-${node.id}`),
-        wordpress_id: node.id,
+        id: createNodeId(
+          `woocommerce-${fieldName}-${getWCNodeId(node, fieldName)}`
+        ),
+        wordpress_id: getWCNodeId(node, fieldName),
         wordpress_parent_id: node.parent,
         __type: `wc${fieldName[0].toUpperCase() + fieldName.slice(1)}`,
       }));
       nodes = nodes.concat(tempNodes);
       if (verbose) {
-        timeStampedLog(`gatsby-source-woocommerce: Completed fetching nodes for field: ${field}`);
+        timeStampedLog(
+          `gatsby-source-woocommerce: Completed fetching nodes for field: ${field}`
+        );
       }
     }
     nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose);
@@ -120,13 +131,23 @@ exports.sourceNodes = async (
     nodes = mapProductsToTags(nodes);
     nodes = mapRelatedProducts(nodes);
     nodes = mapGroupedProducts(nodes);
-    nodes = nodes.map((node) => processNode(createContentDigest, node, verbose, startTime));
+    nodes = mapNodeNormalizeMetadata(nodes);
+
+    nodes = nodes.map((node) =>
+      processNode(createContentDigest, node, verbose, startTime)
+    );
 
     nodes.forEach((node) => {
       createNode(node);
     });
     if (verbose) {
-      timeStampedLog(`gatsby-source-woocommerce: ${nodes.length} nodes mapped, processed, and created in ${(new Date().getTime() - startTime) / 1000}s`);
+      timeStampedLog(
+        `gatsby-source-woocommerce: ${
+          nodes.length
+        } nodes mapped, processed, and created in ${(new Date().getTime() -
+          startTime) /
+          1000}s`
+      );
     }
   }
 
