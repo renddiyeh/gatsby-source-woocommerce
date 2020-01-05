@@ -1,7 +1,7 @@
 # Note
 **Please note: the original author of this package is [Marc Glasser](https://github.com/marcaaron/) -- see the [the original repo](https://github.com/marcaaron/gatsby-source-woocommerce) and [package](https://www.npmjs.com/package/gatsby-source-woocommerce).**
-
 # gatsby-source-woocommerce
+
 Source plugin for [Gatsby](https://www.gatsbyjs.org/). Pulls in data from protected routes via the [WooCommerce REST API](http://woocommerce.github.io/woocommerce-rest-api-docs/) with credentials.
 
 ## Contents
@@ -11,8 +11,6 @@ Source plugin for [Gatsby](https://www.gatsbyjs.org/). Pulls in data from protec
 - [GraphQL Query Examples](#some-graphql-query-examples)
 - [Integration with gatsby-image](#integration-with-gatsby-image)
 - [Changelog](#changelog)
-
-
 ## Install
 
 `npm install --save @pasdo501/gatsby-source-woocommerce`
@@ -29,8 +27,13 @@ plugins:[
   {       
     resolve: '@pasdo501/gatsby-source-woocommerce',
     options: {
-	   // Base URL of Wordpress site
+      // Base URL of Wordpress site
       api: 'wordpress.domain',
+
+      // set to false to not see verbose output during build 
+      // default: true
+      verbose: true,
+
       // true if using https. otherwise false.
       https: false,
       api_keys: {
@@ -71,6 +74,7 @@ Definitive:
 - Orders
 - Reports
 - Coupons
+
 
 **Note**: If following the endpoint layout from the [WooCommerce REST API docs](https://woocommerce.github.io/woocommerce-rest-api-docs/?php#introduction), all fields that do not contain a wildcard *should* be supported.
 
