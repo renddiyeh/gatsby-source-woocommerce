@@ -69,7 +69,7 @@ const processNode = (createContentDigest, node, verbose, processNodeStartTime) =
  *
  * @return {array} Processed nodes
  */
-const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
+const asyncGetProductVariations = async (nodes, WooCommerce, verbose, fields = []) => {
   if (verbose) {
     timeStampedLog(`gatsby-source-woocommerce: Fetching product variations for ${nodes.length} nodes`);
   }
@@ -85,7 +85,14 @@ const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
         const variations_path = `products/${node.wordpress_id}/variations`;
 
         do {
-          const args = { page, per_page: 100 };
+          const _fields = fields.length
+            ? fields.join(',')
+            : null;
+          let args = { page, per_page: 100 };
+          if (_fields) {
+            args = { ...args, _fields }
+          }
+
           await WooCommerce.get(
             variations_path,
             args
@@ -226,7 +233,7 @@ const mapProductsToCategories = (nodes) => {
   );
 
   return nodes.map((node) => {
-    if (categories.length && node.__type === "wcProducts") {
+    if (categories.length && node.__type === "wcProducts" && node.categories !== undefined) {
       node.categories.forEach(({ id }) => {
         const category = categories.find((c) => id === c.wordpress_id);
         if (category) {
@@ -266,7 +273,7 @@ const mapProductsToTags = (nodes) => {
   const tags = nodes.filter((node) => node.__type === "wcProductsTags");
 
   return nodes.map((node) => {
-    if (tags.length && node.__type === "wcProducts") {
+    if (tags.length && node.__type === "wcProducts" && node.tags !== undefined) {
       node.tags.forEach(({ id }) => {
         const tag = tags.find((t) => id === t.wordpress_id);
         if (tag) {

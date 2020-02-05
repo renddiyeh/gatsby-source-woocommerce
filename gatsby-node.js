@@ -30,6 +30,7 @@ exports.sourceNodes = async (
     https,
     api_keys,
     fields,
+    resources,
     api_version = "wc/v3",
     per_page,
     wpAPIPrefix = null,
@@ -54,13 +55,21 @@ exports.sourceNodes = async (
   });
 
   // Fetch Node data for a given field name
-  const fetchNodes = async (fieldName) => {
+  const fetchNodes = async (fieldName, fields = []) => {
     let data_ = [];
     let page = 1;
     let pages;
 
     do {
       let args = per_page ? { per_page, page } : { page };
+      if (fields.length) {
+        const _fields = fields.join(',');
+        args = {
+          ...args,
+          _fields
+        }
+      };
+
       await WooCommerce.get(fieldName, args)
         .then((response) => {
           if (response.status === 200) {
@@ -90,14 +99,23 @@ exports.sourceNodes = async (
   };
 
   // Loop over each field set in configOptions and process/create nodes
-  async function fetchNodesAndCreate(array) {
+  async function fetchNodesAndCreate(array, isSelectiveFields = false) {
     let nodes = [];
     for (const field of array) {
-      const fieldName = normaliseFieldName(field);
-      let tempNodes = await fetchNodes(field);
+      let fieldName;
+      let tempNodes;
+
+      if (isSelectiveFields) {
+        fieldName = normaliseFieldName(field.name);
+        tempNodes = await fetchNodes(field.name, field.fields);
+      } else {
+        fieldName = normaliseFieldName(field);
+        tempNodes = await fetchNodes(field);
+      }
+      
       if (verbose) {
         timeStampedLog(
-          `gatsby-source-woocommerce: Fetching ${tempNodes.length} nodes for field: ${field}`
+          `gatsby-source-woocommerce: Fetching ${tempNodes.length} nodes for field: ${field.name ? field.name : field}`
         );
       }
       tempNodes = tempNodes.map((node) => ({
@@ -112,11 +130,21 @@ exports.sourceNodes = async (
       nodes = nodes.concat(tempNodes);
       if (verbose) {
         timeStampedLog(
-          `gatsby-source-woocommerce: Completed fetching nodes for field: ${field}`
+          `gatsby-source-woocommerce: Completed fetching nodes for field: ${field.name ? field.name : field}`
         );
       }
     }
-    nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose);
+
+    if (isSelectiveFields) {
+      let product_fields = array.find(a => a.name === 'products');
+      product_fields = product_fields && product_fields.fields ? product_fields.fields : null;
+      if (product_fields && product_fields.length) {
+        nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose, product_fields); 
+      }
+    } else {
+      nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose);
+    }
+
     nodes = await asyncGetProductAttributes(nodes, WooCommerce, verbose);
     nodes = await mapMediaToNodes({
       nodes,
@@ -153,7 +181,11 @@ exports.sourceNodes = async (
     }
   }
 
-  await fetchNodesAndCreate(fields);
+  if (resources) {
+    await fetchNodesAndCreate(resources, true);
+  } else {
+    await fetchNodesAndCreate(fields);
+  }
   return;
 };
 
