@@ -140,6 +140,81 @@ const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
 };
 
 /**
+ * Get product attributes terms.
+ * Asynchronous function.
+ *
+ * @param {array} nodes
+ * @param {object} WooCommerce
+ *
+ * @return {array} Processed nodes
+ */
+const asyncGetProductAttributes = async (nodes, WooCommerce, verbose) => {
+  if (verbose) {
+    timeStampedLog(
+      `gatsby-source-woocommerce: Fetching product attributes for ${nodes.length} nodes`
+    );
+  }
+  const asyncGetProductAttributesStartTime = new Date().getTime();
+  let asyncGetProductAttributesTimer = asyncGetProductAttributesStartTime;
+  const processedNodes = [];
+  const promises = nodes.map(async node => {
+    if (node.__type === 'wcProductsAttributes') {
+      let page = 1;
+      let pages = 1;
+      node.attribute_options = [];
+      const attributes_path = `products/attributes/${node.wordpress_id}/terms`;
+      do {
+        const args = { page, per_page: 100 };
+        await WooCommerce.get(attributes_path, args)
+          .then(response => {
+            if (response.status === 200) {
+              node.attribute_options = [...node.attribute_options, ...response.data];
+              pages = parseInt(response.headers['x-wp-totalpages']);
+              page++;
+              if (verbose) {
+                //print progress every 1500 ms
+                if (new Date().getTime() - asyncGetProductAttributesTimer > 1500) {
+                  asyncGetProductAttributesTimer = new Date().getTime();
+                  timeStampedLog(`gatsby-source-woocommerce: Retrieved ${attributes_path}...`);
+                }
+              }
+            } else {
+              console.warn(`
+                Warning: error while fetching attributes terms for ${node.name}.
+                Error data: ${response.data}.
+              `);
+              pages = 0;
+            }
+          })
+          .catch(error => {
+            console.warn(`
+              Warning: error while fetching attributes terms for ${node.name}.
+              Error: ${error}.
+            `);
+            pages = 0;
+          });
+      } while (page <= pages);
+    }
+    return new Promise((res, rej) => {
+      res(node);
+    });
+  });
+
+  await Promise.all(promises).then(results => {
+    results.forEach(async node => {
+      processedNodes.push(node);
+    });
+  });
+
+  timeStampedLog(
+    `gatsby-source-woocommerce: ${promises.length} product attributes terms retrieved for ${
+      nodes.length
+    } nodes in ${(new Date().getTime() - asyncGetProductAttributesStartTime) / 1000}s`
+  );
+  return processedNodes;
+};
+
+/**
  * Create links between products and categories (bi-directional)
  * @param {array} nodes
  *
@@ -474,5 +549,6 @@ module.exports = {
   mapRelatedProducts,
   mapGroupedProducts,
   asyncGetProductVariations,
+  asyncGetProductAttributes,
   timeStampedLog,
 };
