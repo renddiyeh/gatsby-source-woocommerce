@@ -41,7 +41,7 @@ plugins:[
         consumer_secret: <secret>,
       },
       // Array of strings with fields you'd like to create nodes for...
-      fields: ['products', 'products/categories',  'products/attributes'],
+      fields: ['products', 'products/categories', 'products/attributes'],
       // Send the API keys as query string parameters instead of using the authorization header
       // OPTIONAL: defaults to false
       query_string_auth: false,
@@ -71,6 +71,7 @@ plugins:[
 Definitive: 
 - Products
 - Products Attributes
+- Categories
 - Customers
 - Orders
 - Reports
@@ -374,9 +375,10 @@ Some example queries for the fixed and fluid types are below.
 You can visit [gatsby-image](https://www.gatsbyjs.org/packages/gatsby-image/) for more information, and to learn about the different types of queries.
 
 ## Changelog
+- 0.14.0: [Support for Product Attributes with terms](https://github.com/pasdo501/gatsby-source-woocommerce/pull/27). 
 - 0.13.0: [Support for Metadata fields and Misc data added](https://github.com/pasdo501/gatsby-source-woocommerce/pull/24)
 - 0.12.0: [Variable product data pulled in in parallel, verbose flag added](https://github.com/pasdo501/gatsby-source-woocommerce/pull/23). Improves build time for large number of products with variations.
-- 0.11.0: [Add wordpress_parent_id field](https://github.com/pasdo501/gatsby-source-woocommerce/pull/20), to get around the `parent` field being overriden by the GraphQL node parent field. Additionally, also added wordpress_parent & wordpress_children bidirectional links to the nodes themselves.
+- 0.11.0: [Add wordpress_parent_id field](https://github.com/pasdo501/gatsby-source-woocommerce/pull/20), to get around the `parent` field being overriden by the GraphQL node parent field. Additionally, added wordpress_parent & wordpress_children bidirectional links to the nodes themselves.
 - 0.10.0: Expanded API config options, including [Basic Authentication as query string](https://github.com/pasdo501/gatsby-source-woocommerce/commit/9bcbafdbf22921bea6afa7a3b786764c2ac6fd25), and [custom port, encoding, & axios config options](https://github.com/pasdo501/gatsby-source-woocommerce/commit/be3bc2d28b040d31c441cea5b13efb08026fba87).
 - 0.9.0: [ACF image support](https://github.com/pasdo501/gatsby-source-woocommerce/commit/f5f84c23a7ca33f4f1a4848edda7e699f2e2759a), c/o [8ctopotamus](https://github.com/8ctopotamus). [Test suite extension](https://github.com/pasdo501/gatsby-source-woocommerce/commit/6b00342ee58876c8655e345bed367adf07338ec4) (node processing, without field mapping). Revert case insensitive field names - API request doesn't care, but allows for fields with capitals; more freedom to the dev.
 - 0.8.1: Case insensitive field names & start of test suite c/o [Siemah](https://github.com/siemah)
