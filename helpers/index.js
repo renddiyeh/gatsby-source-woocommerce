@@ -1,4 +1,5 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
+const retry = require("async-retry")
 
 /**
  * Add date and time stamp to message before logging to console.
@@ -69,7 +70,7 @@ const processNode = (createContentDigest, node, verbose, processNodeStartTime) =
  *
  * @return {array} Processed nodes
  */
-const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
+const asyncGetProductVariations = async (nodes, WooCommerce, verbose, retries) => {
   if (verbose) {
     timeStampedLog(`gatsby-source-woocommerce: Fetching product variations for ${nodes.length} nodes`);
   }
@@ -86,40 +87,38 @@ const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
 
         do {
           const args = { page, per_page: 100 };
-          await WooCommerce.get(
-            variations_path,
-            args
-          )
-            .then((response) => {
-              if (response.status === 200) {
-                node.product_variations = [
-                  ...node.product_variations,
-                  ...response.data,
-                ];
-                pages = parseInt(response.headers["x-wp-totalpages"]);
-                page++;
-                if (verbose) {
-                  //print progress every 1500 ms
-                  if ((new Date().getTime() - asyncGetProductVariationsTimer) > 1500) {
-                    asyncGetProductVariationsTimer = new Date().getTime()
-                    timeStampedLog(`gatsby-source-woocommerce: Retrieved ${variations_path}...`)
-                  }
-                }
-              } else {
-                console.warn(`
-                Warning: error while fetching variations for ${node.name}.
-                Error data: ${response.data}.
-              `);
-                pages = 0;
-              }
-            })
-            .catch((error) => {
+          await retry(async bail => {
+            const response = await WooCommerce.get(
+              variations_path,
+              args
+            )
+            if (response.status >= 400 && response.status < 500) {
               console.warn(`
               Warning: error while fetching variations for ${node.name}.
-              Error: ${error}.
+              Error data: ${response.data}.
             `);
               pages = 0;
-            });
+              bail(new Error(response.data))
+              return
+            }
+            if (response.status === 200) {
+              node.product_variations = [
+                ...node.product_variations,
+                ...response.data,
+              ];
+              pages = parseInt(response.headers["x-wp-totalpages"]);
+              page++;
+              if (verbose) {
+                //print progress every 1500 ms
+                if ((new Date().getTime() - asyncGetProductVariationsTimer) > 1500) {
+                  asyncGetProductVariationsTimer = new Date().getTime()
+                  timeStampedLog(`gatsby-source-woocommerce: Retrieved ${variations_path}...`)
+                }
+              }
+            } else {
+              throw new Error(response.data)
+            }
+          }, { retries });
         } while (page <= pages);
       } else {
         node.product_variations = [];
@@ -148,7 +147,7 @@ const asyncGetProductVariations = async (nodes, WooCommerce, verbose) => {
  *
  * @return {array} Processed nodes
  */
-const asyncGetProductAttributes = async (nodes, WooCommerce, verbose) => {
+const asyncGetProductAttributes = async (nodes, WooCommerce, verbose, retries) => {
   if (verbose) {
     timeStampedLog(
       `gatsby-source-woocommerce: Fetching product attributes for ${nodes.length} nodes`
@@ -165,34 +164,32 @@ const asyncGetProductAttributes = async (nodes, WooCommerce, verbose) => {
       const attributes_path = `products/attributes/${node.wordpress_id}/terms`;
       do {
         const args = { page, per_page: 100 };
-        await WooCommerce.get(attributes_path, args)
-          .then(response => {
-            if (response.status === 200) {
-              node.attribute_options = [...node.attribute_options, ...response.data];
-              pages = parseInt(response.headers['x-wp-totalpages']);
-              page++;
-              if (verbose) {
-                //print progress every 1500 ms
-                if (new Date().getTime() - asyncGetProductAttributesTimer > 1500) {
-                  asyncGetProductAttributesTimer = new Date().getTime();
-                  timeStampedLog(`gatsby-source-woocommerce: Retrieved ${attributes_path}...`);
-                }
-              }
-            } else {
-              console.warn(`
-                Warning: error while fetching attributes terms for ${node.name}.
-                Error data: ${response.data}.
-              `);
-              pages = 0;
-            }
-          })
-          .catch(error => {
+        await retry(async bail => {
+          const response = await WooCommerce.get(attributes_path, args)
+          if (response.status >= 400 && response.status < 500) {
             console.warn(`
               Warning: error while fetching attributes terms for ${node.name}.
-              Error: ${error}.
+              Error data: ${response.data}.
             `);
             pages = 0;
-          });
+            bail(new Error(response.data))
+            return
+          }
+          if (response.status === 200) {
+            node.attribute_options = [...node.attribute_options, ...response.data];
+            pages = parseInt(response.headers['x-wp-totalpages']);
+            page++;
+            if (verbose) {
+              //print progress every 1500 ms
+              if (new Date().getTime() - asyncGetProductAttributesTimer > 1500) {
+                asyncGetProductAttributesTimer = new Date().getTime();
+                timeStampedLog(`gatsby-source-woocommerce: Retrieved ${attributes_path}...`);
+              }
+            }
+          } else {
+            throw new Error(response.data)
+          }
+        }, { retries });
       } while (page <= pages);
     }
     return new Promise((res, rej) => {

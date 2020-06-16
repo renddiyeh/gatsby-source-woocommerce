@@ -1,4 +1,5 @@
 const WooCommerceRestApi = require("@woocommerce/woocommerce-rest-api").default;
+const retry = require("async-retry")
 
 const {
   processNode,
@@ -38,6 +39,7 @@ exports.sourceNodes = async (
     encoding = "",
     axios_config = null,
     verbose = true,
+    retries = 5,
   } = configOptions;
 
   // set up WooCommerce node api tool
@@ -61,29 +63,27 @@ exports.sourceNodes = async (
 
     do {
       let args = per_page ? { per_page, page } : { page };
-      await WooCommerce.get(fieldName, args)
-        .then((response) => {
-          if (response.status === 200) {
-            data_ = [...data_, ...response.data];
-            pages = parseInt(response.headers["x-wp-totalpages"]);
-            page++;
-          } else {
-            console.warn(`
-              ========== WARNING FOR FIELD ${fieldName} ===========
-              The following error status was produced: ${response.data}
-              ================== END WARNING ==================
-            `);
-            return [];
-          }
-        })
-        .catch((error) => {
+      await retry(async bail => {
+        const response = await WooCommerce.get(fieldName, args)
+        if (response.status >= 400 && response.status < 500) {
           console.warn(`
             ========== WARNING FOR FIELD ${fieldName} ===========
-            The following error status was produced: ${error}
+            The following error status was produced: ${response.data}
             ================== END WARNING ==================
           `);
+          bail(new Error(response.data));
           return [];
-        });
+        }
+        if (response.status === 200) {
+          data_ = [...data_, ...response.data];
+          pages = parseInt(response.headers["x-wp-totalpages"]);
+          page++;
+        } else {
+          throw new Error(response.data)
+        }
+      }, {
+        retries,
+      });
     } while (page <= pages);
 
     return data_;
@@ -116,8 +116,8 @@ exports.sourceNodes = async (
         );
       }
     }
-    nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose);
-    nodes = await asyncGetProductAttributes(nodes, WooCommerce, verbose);
+    nodes = await asyncGetProductVariations(nodes, WooCommerce, verbose, retries);
+    nodes = await asyncGetProductAttributes(nodes, WooCommerce, verbose, retries);
     nodes = await mapMediaToNodes({
       nodes,
       store,
