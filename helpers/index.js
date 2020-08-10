@@ -1,5 +1,6 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
 const retry = require("async-retry")
+const { nanoid } = require('nanoid')
 
 /**
  * Add date and time stamp to message before logging to console.
@@ -398,6 +399,7 @@ const downloadMedia = async ({
         createNode,
         createNodeId,
         parentNodeId: n.id.toString(),
+        name: nanoid(),
       });
 
       if (fileNode) {
@@ -447,6 +449,7 @@ const downloadACFMedia = async ({
         createNode,
         createNodeId,
         parentNodeId: n.id.toString(),
+        name: nanoid(),
       });
 
       if (fileNode) {
