@@ -393,7 +393,7 @@ const downloadMedia = async ({
   if (!fileNodeID) {
     try {
       const fileNode = await createRemoteFileNode({
-        url: image.src,
+        url: encodeURI(image.src),
         store,
         cache,
         createNode,
