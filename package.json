@@ -1,6 +1,6 @@
 {
-  "name": "@pasdo501/gatsby-source-woocommerce",
-  "version": "0.14.1",
+  "name": "@renddiyeh/gatsby-source-woocommerce",
+  "version": "0.14.2",
   "description": "Gatsby source plugin for WooCommerce with improved field type support",
   "main": "gatsby-node.js",
   "scripts": {
@@ -11,15 +11,15 @@
   "dependencies": {
     "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "async-retry": "^1.3.1",
-    "gatsby-source-filesystem": "^2.3.24",
-    "nanoid": "^3.1.12"
+    "gatsby-source-filesystem": "^2.9.0",
+    "nanoid": "^3.1.20"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pasdo501/gatsby-source-woocommerce"
+    "url": "https://github.com/renddiyeh/gatsby-source-woocommerce"
   },
   "bugs": {
-    "url": "https://github.com/pasdo501/gatsby-source-woocommerce/issues"
+    "url": "https://github.com/renddiyeh/gatsby-source-woocommerce/issues"
   },
   "keywords": [
     "gatsby",
@@ -28,6 +28,6 @@
     "woocommerce"
   ],
   "devDependencies": {
-    "jest": "^26.2.2"
+    "jest": "^26.6.3"
   }
 }
